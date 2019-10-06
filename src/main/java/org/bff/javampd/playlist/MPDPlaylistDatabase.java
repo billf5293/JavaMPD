@@ -10,8 +10,8 @@ import org.bff.javampd.song.SongDatabase;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * MPDPlaylistDatabase represents a playlist database to a {@link org.bff.javampd.server.MPD}.
@@ -62,11 +62,13 @@ public class MPDPlaylistDatabase implements PlaylistDatabase {
     public Collection<MPDSong> listPlaylistSongs(String playlistName) {
         List<MPDSong> songList = new ArrayList<>();
         List<String> response = commandExecutor.sendCommand(databaseProperties.getListSongs(), playlistName);
-        songList.addAll(
-                songConverter.getSongFileNameList(response)
-                        .stream()
-                        .map(song -> new ArrayList<>(songDatabase.searchFileName(song)).get(0))
-                        .collect(Collectors.toList()));
+        List<MPDSong> list = new ArrayList<>();
+        for (String song : songConverter.getSongFileNameList(response)) {
+            final Iterator<MPDSong> found = songDatabase.searchFileName(song).iterator();
+            MPDSong mpdSong = found.hasNext() ? found.next() : new MPDSong(song, playlistName);
+            list.add(mpdSong);
+        }
+        songList.addAll(list);
 
         return songList;
     }
